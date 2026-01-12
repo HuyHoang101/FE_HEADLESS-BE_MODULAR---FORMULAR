@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15 
+    container_name: devision_db_container
+    platform: linux/amd64 
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devision_db # Thay đổi tên database mới
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data # Sử dụng volume đã khai báo bên dưới
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d devision_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: devision_backend_container # Thay mới tên container
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=devision_db
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+volumes:
+  postgres_data: # Khai báo để Docker tạo một phân vùng lưu trữ database
+
+networks:
+  default:
+    name: devision_network
