@@ -1,17 +1,19 @@
 -- 1. Tạo bảng Công ty (Job Manager Subsystem - Reference)
 CREATE TABLE companies (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     logo TEXT,
     email VARCHAR(255),
     phone VARCHAR(20),
-    address TEXT
+    address TEXT,
+    createdAt TIMESTAMP DEFAULT NOW(),
+    updatedAt TIMESTAMP DEFAULT NOW()
 );
 
 -- 2. Tạo bảng Job (Job Applicant Subsystem)
 CREATE TABLE jobs (
-    id SERIAL PRIMARY KEY,
-    companyId INTEGER REFERENCES companies(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    companyId UUID REFERENCES companies(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     tags TEXT[],             -- Mảng các kỹ năng (React, Nodejs...)
     benefits TEXT[],         -- Mảng các phúc lợi (Remote, Insurance...)
@@ -38,51 +40,50 @@ INSERT INTO companies (name, logo, email, phone, address) VALUES
 ('E-Commerce Giant', 'https://static.vecteezy.com/system/resources/previews/047/285/055/non_2x/abstract-logo-design-for-any-corporate-brand-business-company-vector.jpg', 'talent@ecomgiant.com', '0944555666', 'Bangkok, Thailand'),
 ('AI Research Lab', 'https://img.freepik.com/free-vector/abstract-company-logo_53876-120501.jpg?semt=ais_hybrid&w=740&q=80', 'research@ailab.io', '0955666777', 'Silicon Valley, California, USA');
 
--- 4. Chèn dữ liệu mẫu cho Jobs (Mô phỏng các Job thực tế để Search & Filter) [cite: 143, 144, 145]
+-- 4. Chèn dữ liệu mẫu cho Jobs (Đã sửa lỗi kiểu dữ liệu Array và Text)
 INSERT INTO jobs (companyId, title, tags, benefits, salaryMin, salaryMax, employmentType, description, location)
 SELECT 
-    -- CompanyId sẽ chạy từ 1 đến 10
-    floor(random() * 10 + 1)::int,
+    -- CompanyId random 
+    (SELECT id FROM companies ORDER BY random() LIMIT 1),
     
-    -- Chọn ngẫu nhiên tiêu đề công việc
+    -- Tiêu đề công việc (Mảng text bình thường -> lấy 1 phần tử -> OK)
     (ARRAY[
         'Senior Backend Developer', 'Frontend Engineer (React)', 'DevOps Specialist', 
         'Data Analyst', 'Mobile App Developer', 'AI/ML Researcher', 
         'Fullstack Developer', 'QA Automation Engineer', 'Solution Architect', 'Security Engineer'
     ])[floor(random() * 10 + 1)],
     
-    -- Trộn các bộ Tags kỹ thuật
+    -- [FIXED] Tags: Lưu dưới dạng chuỗi '{A,B}', sau đó ép kiểu ::text[]
     (ARRAY[
-        ARRAY['Nodejs', 'Postgres', 'AWS'],
-        ARRAY['React', 'TypeScript', 'NextJS'],
-        ARRAY['Python', 'Tensorflow', 'SQL'],
-        ARRAY['Docker', 'Kubernetes', 'CI/CD'],
-        ARRAY['Flutter', 'Dart', 'Firebase'],
-        ARRAY['Java', 'Spring Boot', 'Microservices'],
-        ARRAY['Golang', 'Redis', 'Kafka'],
-        ARRAY['PHP', 'Laravel', 'VueJS'],
-        ARRAY['C#', '.NET Core', 'Azure'],
-        ARRAY['Swift', 'iOS', 'Objective-C']
-    ])[floor(random() * 10 + 1)],
+        '{Nodejs, Postgres, AWS}',
+        '{React, TypeScript, NextJS}',
+        '{Python, Tensorflow, SQL}',
+        '{Docker, Kubernetes, CI/CD}',
+        '{Flutter, Dart, Firebase}',
+        '{Java, Spring Boot, Microservices}',
+        '{Golang, Redis, Kafka}',
+        '{PHP, Laravel, VueJS}',
+        '{C#, .NET Core, Azure}',
+        '{Swift, iOS, Objective-C}'
+    ])[floor(random() * 10 + 1)]::text[],
     
-    -- Trộn các phúc lợi
+    -- [FIXED] Benefits: Tương tự như Tags
     (ARRAY[
-        ARRAY['Remote', 'Insurance 100%'],
-        ARRAY['Macbook Pro', 'Annual Bonus'],
-        ARRAY['Flexible hours', 'Gym Membership'],
-        ARRAY['Free Lunch', 'Stock Options'],
-        ARRAY['Global Team', 'Travel Opportunities']
-    ])[floor(random() * 5 + 1)],
+        '{Remote, Insurance 100%}',
+        '{Macbook Pro, Annual Bonus}',
+        '{Flexible hours, Gym Membership}',
+        '{Free Lunch, Stock Options}',
+        '{Global Team, Travel Opportunities}'
+    ])[floor(random() * 5 + 1)]::text[],
     
-    -- Lương ngẫu nhiên từ 800 - 2500
+    -- Lương Min/Max
     (800 + floor(random() * 1700))::int,
-    -- Lương Max ngẫu nhiên từ 2600 - 5000
     (2600 + floor(random() * 2400))::int,
     
-    -- Hình thức làm việc
+    -- Loại hình
     (ARRAY['Full-time', 'Contract', 'Freelance', 'Internship'])[floor(random() * 4 + 1)],
     
-    -- 10 mẫu mô tả công việc khác nhau trộn với biến i
+    -- [FIXED] Description: Thêm ::text sau biến i
     (ARRAY[
         'Phát triển hệ thống microservices hiệu năng cao. Mã số: ',
         'Thiết kế giao diện người dùng tối ưu trải nghiệm. Mã số: ',
@@ -94,9 +95,9 @@ SELECT
         'Kiểm thử tự động và đảm bảo chất lượng phần mềm trước khi release. Mã số: ',
         'Tư vấn giải pháp kiến trúc hệ thống cho các dự án Fintech. Mã số: ',
         'Đảm bảo an mật và phòng chống tấn công cho hệ thống ngân hàng. Mã số: '
-    ])[floor(random() * 10 + 1)] || i,
+    ])[floor(random() * 10 + 1)] || i::text, 
     
     -- Địa điểm
     (ARRAY['Vietnam', 'Singapore', 'Thailand', 'Remote', 'Japan', 'USA'])[floor(random() * 6 + 1)]
 
-FROM generate_series(4, 100) AS i;
+FROM generate_series(1, 100) AS i;

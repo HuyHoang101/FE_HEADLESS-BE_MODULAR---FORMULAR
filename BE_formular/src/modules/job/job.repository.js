@@ -1,7 +1,7 @@
 import * as db from '../../helpers/db.js';
 
 class JobRepository {
-    async findAll({ search, location, type, tags }) {
+    async findAll({ search, location, type, tags, companyId }) {
         // 1. KHỞI TẠO CÂU LỆNH SQL GỐC
         // Sử dụng AS "tênTrường" (Alias) để ép Postgres giữ nguyên chữ hoa (Ví dụ: salaryMin).
         // Điều này giúp Code DTO không bị lỗi 'undefined' khi truy cập dữ liệu.
@@ -10,8 +10,10 @@ class JobRepository {
                 j.salaryMax AS "salaryMax", 
                 j.employmentType AS "employmentType",
                 j.createdAt AS "createdAt",
+                j.updatedAt AS "updatedAt",
                 c.name as "companyName", 
-                c.logo as "companyLogo" 
+                c.logo as "companyLogo",
+                c.id as "companyId" 
                 FROM jobs j 
                 LEFT JOIN companies c ON j.companyId = c.id 
                 WHERE j.isActive = true`;
@@ -26,6 +28,11 @@ class JobRepository {
             // ILIKE: Tìm kiếm không phân biệt hoa thường. 
             // $${params.length}: Tự động đánh số tham số theo thứ tự ($1, $2, ...)
             sql += ` AND (j.title ILIKE $${params.length} OR j.description ILIKE $${params.length})`; 
+        }
+
+        if (companyId) {
+            params.push(companyId); 
+            queryText += ` AND j."companyId" = $${params.length}`;
         }
 
         // 3. LỌC THEO ĐỊA ĐIỂM (LOCATION) - HỖ TRỢ CHỌN NHIỀU

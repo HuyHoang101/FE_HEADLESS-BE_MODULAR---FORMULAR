@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 // Import trực tiếp các controller xử lý logic
 import * as jobCtrl from './modules/job/job.controller.js';
+import * as comCtrl from './modules/company/company.controller.js'
 
 const app = express();
 
@@ -24,6 +25,18 @@ app.patch('/api/jobs/:id', jobCtrl.update);
 
 // Xóa (hoặc vô hiệu hóa) công việc theo ID
 app.delete('/api/jobs/:id', jobCtrl.remove);
+
+// Lấy danh sách hoặc tìm kiếm công việc
+app.get('/api/companies', comCtrl.getAll);
+
+// Tạo mới một công việc
+app.post('/api/companies', comCtrl.create);
+
+// Cập nhật một phần thông tin công việc theo ID
+app.patch('/api/companies/:id', comCtrl.update);
+
+// Xóa (hoặc vô hiệu hóa) công việc theo ID
+app.delete('/api/companies/:id', comCtrl.remove);
 
 // Lấy cổng từ biến môi trường (Docker) hoặc mặc định là 3000 (máy thật)
 const PORT = process.env.PORT || 3000;
