@@ -1,4 +1,5 @@
--- 1. Tạo bảng Công ty (Job Manager Subsystem - Reference)
+
+-- 1. Tạo bảng Companies
 CREATE TABLE companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
@@ -6,26 +7,28 @@ CREATE TABLE companies (
     email VARCHAR(255),
     phone VARCHAR(20),
     address TEXT,
-    createdAt TIMESTAMP DEFAULT NOW(),
-    updatedAt TIMESTAMP DEFAULT NOW()
+    "createdAt" TIMESTAMP DEFAULT NOW(), -- Bắt buộc có ngoặc kép
+    "updatedAt" TIMESTAMP DEFAULT NOW()  -- Bắt buộc có ngoặc kép
 );
 
--- 2. Tạo bảng Job (Job Applicant Subsystem)
+-- 2. Tạo bảng Jobs
 CREATE TABLE jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    companyId UUID REFERENCES companies(id) ON DELETE CASCADE,
+    "companyId" UUID REFERENCES companies(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
-    tags TEXT[],             -- Mảng các kỹ năng (React, Nodejs...)
-    benefits TEXT[],         -- Mảng các phúc lợi (Remote, Insurance...)
-    salaryMin INTEGER,
-    salaryMax INTEGER,
-    employmentType VARCHAR(50), -- Full-time, Part-time, Internship, Contract
+    tags TEXT[],
+    benefits TEXT[],
+    "salaryMin" INTEGER,      -- Giữ nguyên chữ M viết hoa
+    "salaryMax" INTEGER,      -- Giữ nguyên chữ M viết hoa
+    "employmentType" VARCHAR(50), -- Giữ nguyên chữ T viết hoa
     description TEXT,
-    location VARCHAR(100),      -- City hoặc Country
-    isActive BOOLEAN DEFAULT true,
-    createdAt TIMESTAMP DEFAULT NOW(),
-    updatedAt TIMESTAMP DEFAULT NOW()
+    location VARCHAR(100),
+    "isActive" BOOLEAN DEFAULT true,
+    "createdAt" TIMESTAMP DEFAULT NOW(),
+    "updatedAt" TIMESTAMP DEFAULT NOW()
 );
+
+TRUNCATE TABLE jobs, companies RESTART IDENTITY CASCADE;
 
 -- 3. Chèn dữ liệu mẫu cho Companies (Yêu cầu 4 công ty: 2 Premium, 2 Freemium) [cite: 142]
 INSERT INTO companies (name, logo, email, phone, address) VALUES 
@@ -41,63 +44,39 @@ INSERT INTO companies (name, logo, email, phone, address) VALUES
 ('AI Research Lab', 'https://img.freepik.com/free-vector/abstract-company-logo_53876-120501.jpg?semt=ais_hybrid&w=740&q=80', 'research@ailab.io', '0955666777', 'Silicon Valley, California, USA');
 
 -- 4. Chèn dữ liệu mẫu cho Jobs (Đã sửa lỗi kiểu dữ liệu Array và Text)
-INSERT INTO jobs (companyId, title, tags, benefits, salaryMin, salaryMax, employmentType, description, location)
+WITH company_data AS (
+    -- Gom tất cả ID công ty vào 1 mảng duy nhất
+    SELECT array_agg(id) AS id_list FROM companies
+)
+INSERT INTO jobs ("companyId", title, tags, benefits, "salaryMin", "salaryMax", "employmentType", description, location)
 SELECT 
-    -- CompanyId random 
-    (SELECT id FROM companies ORDER BY random() LIMIT 1),
+    -- [GIẢI PHÁP]: Lấy mảng ID ra -> Random index từ 1 đến độ dài mảng -> Lấy ID tại vị trí đó
+    (SELECT id_list FROM company_data)[floor(random() * array_length((SELECT id_list FROM company_data), 1) + 1)],
     
-    -- Tiêu đề công việc (Mảng text bình thường -> lấy 1 phần tử -> OK)
     (ARRAY[
         'Senior Backend Developer', 'Frontend Engineer (React)', 'DevOps Specialist', 
         'Data Analyst', 'Mobile App Developer', 'AI/ML Researcher', 
         'Fullstack Developer', 'QA Automation Engineer', 'Solution Architect', 'Security Engineer'
     ])[floor(random() * 10 + 1)],
     
-    -- [FIXED] Tags: Lưu dưới dạng chuỗi '{A,B}', sau đó ép kiểu ::text[]
     (ARRAY[
-        '{Nodejs, Postgres, AWS}',
-        '{React, TypeScript, NextJS}',
-        '{Python, Tensorflow, SQL}',
-        '{Docker, Kubernetes, CI/CD}',
-        '{Flutter, Dart, Firebase}',
-        '{Java, Spring Boot, Microservices}',
-        '{Golang, Redis, Kafka}',
-        '{PHP, Laravel, VueJS}',
-        '{C#, .NET Core, Azure}',
-        '{Swift, iOS, Objective-C}'
+        '{Nodejs, Postgres, AWS}', '{React, TypeScript, NextJS}', '{Python, Tensorflow, SQL}',
+        '{Docker, Kubernetes, CI/CD}', '{Flutter, Dart, Firebase}', '{Java, Spring Boot, Microservices}',
+        '{Golang, Redis, Kafka}', '{PHP, Laravel, VueJS}', '{C#, .NET Core, Azure}', '{Swift, iOS, Objective-C}'
     ])[floor(random() * 10 + 1)]::text[],
     
-    -- [FIXED] Benefits: Tương tự như Tags
     (ARRAY[
-        '{Remote, Insurance 100%}',
-        '{Macbook Pro, Annual Bonus}',
-        '{Flexible hours, Gym Membership}',
-        '{Free Lunch, Stock Options}',
-        '{Global Team, Travel Opportunities}'
+        '{Remote, Insurance 100%}', '{Macbook Pro, Annual Bonus}', '{Flexible hours, Gym Membership}',
+        '{Free Lunch, Stock Options}', '{Global Team, Travel Opportunities}'
     ])[floor(random() * 5 + 1)]::text[],
     
-    -- Lương Min/Max
     (800 + floor(random() * 1700))::int,
     (2600 + floor(random() * 2400))::int,
     
-    -- Loại hình
     (ARRAY['Full-time', 'Contract', 'Freelance', 'Internship'])[floor(random() * 4 + 1)],
     
-    -- [FIXED] Description: Thêm ::text sau biến i
-    (ARRAY[
-        'Phát triển hệ thống microservices hiệu năng cao. Mã số: ',
-        'Thiết kế giao diện người dùng tối ưu trải nghiệm. Mã số: ',
-        'Xây dựng hạ tầng đám mây và quy trình triển khai tự động. Mã số: ',
-        'Phân tích dữ liệu lớn và dự báo xu hướng thị trường. Mã số: ',
-        'Xây dựng ứng dụng di động đa nền tảng cho hàng triệu người dùng. Mã số: ',
-        'Nghiên cứu các thuật toán học máy tối ưu cho hệ thống gợi ý. Mã số: ',
-        'Bảo trì và nâng cấp các module cũ sang kiến trúc mới. Mã số: ',
-        'Kiểm thử tự động và đảm bảo chất lượng phần mềm trước khi release. Mã số: ',
-        'Tư vấn giải pháp kiến trúc hệ thống cho các dự án Fintech. Mã số: ',
-        'Đảm bảo an mật và phòng chống tấn công cho hệ thống ngân hàng. Mã số: '
-    ])[floor(random() * 10 + 1)] || i::text, 
+    'Mô tả công việc chi tiết. Mã job: ' || i::text, 
     
-    -- Địa điểm
     (ARRAY['Vietnam', 'Singapore', 'Thailand', 'Remote', 'Japan', 'USA'])[floor(random() * 6 + 1)]
 
 FROM generate_series(1, 100) AS i;

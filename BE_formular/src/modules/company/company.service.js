@@ -3,6 +3,8 @@ import CompanyRepository from "./company.repository.js";
 class CompanyService {
     async list() { return await CompanyRepository.findAll(); }
 
+    async findById(id) { return await CompanyRepository.findById(id)}
+
     async add(d) { 
         return await CompanyRepository.create(d); 
     }

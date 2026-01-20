@@ -5,9 +5,11 @@ export const formatJob = (j) => ({
     company: { name: j.companyName, logo: j.companyLogo },
     skills: j.tags || [],
     perks: j.benefits || [],
-    salary: `${j.salaryMin} - ${j.salaryMax}`,
+    salaryMin: j.salaryMin,
+    salaryMax: j.salaryMax,
     location: j.location,
     type: j.employmentType,
-    createAt: j.createdAt,
+    description: j.description,
+    createdAt: j.createdAt,
     updatedAt: j.updatedAt
 });

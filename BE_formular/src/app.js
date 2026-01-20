@@ -17,6 +17,8 @@ app.use(cors());
 // Lấy danh sách hoặc tìm kiếm công việc
 app.get('/api/jobs', jobCtrl.getAll);
 
+app.get('/api/jobs/:id', jobCtrl.getById);
+
 // Tạo mới một công việc
 app.post('/api/jobs', jobCtrl.create);
 
@@ -28,6 +30,8 @@ app.delete('/api/jobs/:id', jobCtrl.remove);
 
 // Lấy danh sách hoặc tìm kiếm công việc
 app.get('/api/companies', comCtrl.getAll);
+
+app.get('/api/companies/:id', comCtrl.getById);
 
 // Tạo mới một công việc
 app.post('/api/companies', comCtrl.create);
